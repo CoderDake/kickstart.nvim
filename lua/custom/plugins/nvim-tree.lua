@@ -12,6 +12,7 @@ return {
 
     -- optionally enable 24-bit colour
     vim.opt.termguicolors = true
+    vim.keymap.set('n', '<leader>t', ':NvimTreeToggle<Cr>', { desc = '[T]oggle File Tree' })
     require('nvim-tree').setup {}
   end,
 }
