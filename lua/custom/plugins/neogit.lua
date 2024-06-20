@@ -314,6 +314,7 @@ return {
     vim.keymap.set('n', '<leader>gb', ':Telescope git_branches<CR>', { desc = '[G]it [B]ranches', silent = true, noremap = true })
     vim.keymap.set('n', '<leader>gB', ':G blame<CR>', { desc = '[G]it [B]lame', silent = true, noremap = true })
 
+    vim.keymap.set('n', '<leader>dd', ':DiffviewOpen', { desc = '[D]iffview Current File' })
     vim.keymap.set('n', '<leader>dum', ':DiffviewOpen upstream/master...<CR>', { desc = '[D]iff [U]pstream/[M]aster' })
     vim.keymap.set('n', '<leader>duM', ':DiffviewOpen upstream/main...<CR>', { desc = '[D]iff [U]pstream/[M]ain' })
     vim.keymap.set('n', '<leader>dom', ':DiffviewOpen origin/master...<CR>', { desc = '[D]iff [O]rigin/[M]aster' })

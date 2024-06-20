@@ -21,7 +21,9 @@ return { -- LSP Configuration & Plugins
       vim.fn.expand '$HOME/.pub-cache',
       vim.fn.expand '/opt/homebrew/',
       vim.fn.expand '$HOME/tools/flutter/',
-      vim.fn.expand '$HOME/developmnt/flutter/',
+      vim.fn.expand '$HOME/development/flutter/',
+      vim.fn.expand '$HOME/development/devtools/tool/flutter-sdk/',
+      vim.fn.expand '$HOME/development/devtools/packages/devtools_app/test/widget_test.dart',
     }
     -- Brief aside: **What is LSP?**
     --
