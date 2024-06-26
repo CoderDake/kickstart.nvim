@@ -373,7 +373,8 @@ require('lazy').setup({
         },
         defaults = {
           layout_config = { height = 0.95, width = 0.95 },
-          path_disply = { 'smart' },
+          path_display = { 'smart' },
+          dynamic_preview_title = true,
         },
       }
 
