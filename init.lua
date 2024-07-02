@@ -83,6 +83,7 @@ I hope you enjoy your Neovim journey,
 
 P.S. You can delete this when you're done too. It's your config now! :)
 --]]
+require 'custom/mappings'
 
 -- Set <space> as the leader key
 -- See `:help mapleader`
@@ -373,7 +374,7 @@ require('lazy').setup({
         },
         defaults = {
           layout_config = { height = 0.95, width = 0.95 },
-          path_display = { 'smart' },
+          path_display = { 'truncate' },
           dynamic_preview_title = true,
         },
       }

@@ -45,5 +45,8 @@ return {
     vim.keymap.set('n', ']t', function()
       neotest.jump.prev { status = 'failed' }
     end, { desc = 'Prev Failed Test' })
+    vim.keymap.set('n', '<leader>tA', function()
+      neotest.run.run(vim.fn.getcwd())
+    end, { desc = '[T]est [A]ll in cwd' })
   end,
 }
