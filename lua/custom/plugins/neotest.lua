@@ -39,10 +39,10 @@ return {
     vim.keymap.set('n', '<leader>tt', function()
       neotest.summary.toggle { follow = true }
     end, { desc = '[T]est Summary [T]oggle' })
-    vim.keymap.set('n', '[t', function()
+    vim.keymap.set('n', ']t', function()
       neotest.jump.prev { status = 'failed' }
     end, { desc = 'Next Failed Test' })
-    vim.keymap.set('n', ']t', function()
+    vim.keymap.set('n', '[t', function()
       neotest.jump.prev { status = 'failed' }
     end, { desc = 'Prev Failed Test' })
     vim.keymap.set('n', '<leader>tA', function()
