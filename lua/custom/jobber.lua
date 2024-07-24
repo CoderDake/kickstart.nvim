@@ -1,8 +1,9 @@
 -- Tools that are helpful for Jobberinos
-function diffRanges()
+function currentFileDiffRanges()
   local currentFile = vim.fn.expand('%')
   local lines = vim.fn.system('git diff --unified=0 ' .. currentFile):gmatch '[^\n\r]+'
   local ranges = {}
+
   for line in lines do
     if line:find '^@@' then
       local line_nums = line:match '%+.- '
@@ -24,7 +25,7 @@ function diffRanges()
   return ranges
 end
 
-local function dump(o)
+ function dump(o)
    if type(o) == 'table' then
       local s = '{ '
       for k,v in pairs(o) do
@@ -36,9 +37,8 @@ local function dump(o)
       return tostring(o)
    end
 end
-print('Ranges: ' .. dump( diffRanges() ))
 vim.api.nvim_create_user_command('DiffFormat', function()
-  local ranges = diffRanges()
+  local ranges = currentFileDiffRanges()
   local format = require('conform').format
   for _, range in pairs(ranges) do
     format {

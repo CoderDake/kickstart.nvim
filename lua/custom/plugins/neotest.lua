@@ -1,16 +1,19 @@
 return {
-  'nvim-neotest/neotest',
+  'nvim-ntotest/neotest',
   dependencies = {
     'nvim-neotest/nvim-nio',
     'nvim-lua/plenary.nvim',
     'antoinemadec/FixCursorHold.nvim',
     'nvim-treesitter/nvim-treesitter',
     'sidlatau/neotest-dart',
+    'olimorris/neotest-rspec',
   },
   config = function()
     local neotest = require 'neotest'
-    neotest.setup {
+    ---@diagnostic disable-next-line: missing-fields
+    neotest.setup({
       adapters = {
+        require('neotest-rspec'),
         require 'neotest-dart' {
           command = 'flutter', -- Command being used to run tests. Defaults to `flutter`
           -- Change it to `fvm flutter` if using FVM
@@ -20,13 +23,25 @@ return {
           custom_test_method_names = {},
         },
       },
-    }
+      floating = {
+        border = 'rounded',
+        max_height = 0.95,
+        max_width = 0.95,
+        options = {},
+      }
+    })
     vim.keymap.set('n', '<leader>tr', function()
       neotest.run.run()
     end, { desc = '[T]est [R]un' })
+    vim.keymap.set('n', '<leader>ta', function()
+      neotest.run.attach()
+    end, { desc = '[T]est Run [A]ttach' })
     vim.keymap.set('n', '<leader>tR', function()
       neotest.run.run(vim.fn.expand '%')
     end, { desc = '[T]est [R]un All' })
+    vim.keymap.set('n', '<leader>tp', function()
+      neotest.output_panel.toggle()
+    end, { desc = 'Toggle [T]est [P]anel' })
     vim.keymap.set('n', '<leader>ts', function()
       neotest.run.stop()
     end, { desc = '[T]est [S]top' })
@@ -40,7 +55,7 @@ return {
       neotest.summary.toggle { follow = true }
     end, { desc = '[T]est Summary [T]oggle' })
     vim.keymap.set('n', ']t', function()
-      neotest.jump.prev { status = 'failed' }
+      neotest.jump.next { status = 'failed' }
     end, { desc = 'Next Failed Test' })
     vim.keymap.set('n', '[t', function()
       neotest.jump.prev { status = 'failed' }
