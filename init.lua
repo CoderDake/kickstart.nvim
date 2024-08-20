@@ -157,6 +157,38 @@ vim.opt.cursorline = true
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 15
 
+-- Set for obsidian
+vim.opt.conceallevel = 1
+
+----------------------------------------------
+---PROFILING HACK see: https://github.com/stevearc/profile.nvim
+local should_profile = os.getenv 'NVIM_PROFILE'
+if should_profile then
+  require('profile').instrument_autocmds()
+  if should_profile:lower():match '^start' then
+    require('profile').start '*'
+  else
+    require('profile').instrument '*'
+  end
+end
+
+local function toggle_profile()
+  local prof = require 'profile'
+  if prof.is_recording() then
+    prof.stop()
+    vim.ui.input({ prompt = 'Save profile to:', completion = 'file', default = 'profile.json' }, function(filename)
+      if filename then
+        prof.export(filename)
+        vim.notify(string.format('Wrote %s', filename))
+      end
+    end)
+  else
+    prof.start '*'
+  end
+end
+vim.keymap.set('', '<f1>', toggle_profile)
+--------------------------------------------
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -234,6 +266,7 @@ vim.opt.rtp:prepend(lazypath)
 --
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
+  'stevearc/profile.nvim', -- Hack for profiling
   'jiangmiao/auto-pairs',
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
@@ -248,7 +281,7 @@ require('lazy').setup({
   --    require('Comment').setup({})
 
   -- "gc" to comment visual regions/lines
-  { 'numToStr/Comment.nvim',    opts = {} },
+  { 'numToStr/Comment.nvim', opts = {} },
 
   -- Here is a more advanced example where we pass configuration
   -- options to `gitsigns.nvim`. This is equivalent to the following Lua:
@@ -283,7 +316,7 @@ require('lazy').setup({
   -- after the plugin has been loaded:
   --  config = function() ... end
 
-  {                     -- Useful plugin to show you pending keybinds.
+  { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
     config = function() -- This is the function that runs, AFTER loading
@@ -336,8 +369,15 @@ require('lazy').setup({
 
       -- Useful for getting pretty icons, but requires a Nerd Font.
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
+      {
+        'nvim-telescope/telescope-live-grep-args.nvim',
+        -- This will not install any breaking changes.
+        -- For major updates, this must be adjusted manually.
+        version = '^1.0.0',
+      },
     },
     config = function()
+      local lga_actions = require 'telescope-live-grep-args.actions'
       -- Telescope is a fuzzy finder that comes with a lot of different things that
       -- it can fuzzy find! It's more than just a "file finder", it can search
       -- many different aspects of Neovim, your workspace, LSP, and more!
@@ -373,6 +413,22 @@ require('lazy').setup({
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
           },
+          live_grep_args = {
+            auto_quoting = false, -- enable/disable auto-quoting
+            -- define mappings, e.g.
+            mappings = { -- extend mappings
+              i = {
+                ['<C-k>'] = lga_actions.quote_prompt(),
+                ['<C-i>'] = lga_actions.quote_prompt { postfix = ' --iglob ' },
+                -- freeze the current list and start a fuzzy search in the frozen list
+                ['<C-space>'] = lga_actions.to_fuzzy_refine,
+              },
+            },
+            -- ... also accepts theme settings, for example:
+            -- theme = "dropdown", -- use dropdown theme
+            -- theme = { }, -- use own theme spec
+            -- layout_config = { mirror=true }, -- mirror preview pane
+          },
         },
         defaults = {
           layout_config = { height = 0.95, width = 0.95 },
@@ -385,15 +441,22 @@ require('lazy').setup({
       -- Enable Telescope extensions if they are installed
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
+      pcall(require('telescope').load_extension, 'live_grep_args')
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
+      local live_grep_args = require('telescope').extensions.live_grep_args
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>sf', function()
+        builtin.find_files { hidden = true }
+      end, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
-      vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep [A]ll' })
+      vim.keymap.set('n', '<leader>sg', function()
+        builtin.live_grep { glob_pattern = { '!*spec*', '!*jest*' } }
+      end, { desc = '[S]earch by [G]rep without specs' })
+      vim.keymap.set('n', '<leader>sG', live_grep_args.live_grep_args, { desc = '[S]earch by [G]rep [A]ll' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>se', function()
         builtin.diagnostics { severity = 1 }
@@ -443,14 +506,29 @@ require('lazy').setup({
     opts = {
       notify_on_error = false,
       format_on_save = function(bufnr)
+        local function has_value(tab, val)
+          for index, value in ipairs(tab) do
+            if value == val then
+              return true
+            end
+          end
+
+          return false
+        end
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
+        print('DAKE FOS')
+        local disable_filetypes = { c = true, cpp = true } -- TODO add rb & others so we can do their formatting after save
         local types_for_only_format_diff = { 'rb' }
-        local fileExtension = vim.fn.expand('%'):match("^.+(%..+)$")
-        local range = nil
-        if types_for_only_format_diff[fileExtension] ~= nil then
+        local filePath = vim.fn.expand("#" .. bufnr .. ":p")
+        print('Dake filepath' .. filePath)
+        local fileExtension = filePath:match("^.+%.(.+)$")
+        -- local range = nil
+        print('Dake File extension: ' .. fileExtension)
+        -- TODO this will need to be changed over so that we can do multiple individual formats
+        if has_value(types_for_only_format_diff, fileExtension) then
+          print('Dake about to get range')
           range = currentFileDiffRanges()
         end
 
@@ -472,7 +550,14 @@ require('lazy').setup({
         -- javascript = { { "prettierd", "prettier" } },
       },
     },
-    config = function()
+    config = function(_, opts)
+      local conform = require('conform')
+      vim.api.nvim_create_autocmd("BufWritePost", {
+        pattern = "*",
+        callback = function(args)
+          require("conform").format({ bufnr = args.buf })
+        end,
+      })
       vim.keymap.set('v', '<leader>Fj', function()
         -- This is supposed to format the selection using a json formatter but doesn't work
         local range = { vim.fn.getpos "'<", vim.fn.getpos "'>" }
@@ -482,6 +567,7 @@ require('lazy').setup({
           range = range,
         }
       end, { desc = '[F]ormat [j]son' })
+      conform.setup(opts)
     end,
   },
 

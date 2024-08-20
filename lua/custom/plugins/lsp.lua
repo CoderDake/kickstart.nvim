@@ -8,11 +8,11 @@ return { -- LSP Configuration & Plugins
 
     -- Useful status updates for LSP.
     -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
-    { 'j-hui/fidget.nvim',       opts = {} },
+    { 'j-hui/fidget.nvim', opts = {} },
 
     -- `neodev` configures Lua LSP for your Neovim config, runtime and plugins
     -- used for completion, annotations and signatures of Neovim apis
-    { 'folke/neodev.nvim',       opts = {} },
+    { 'folke/neodev.nvim', opts = {} },
   },
   config = function()
     local lsp_config = require 'lspconfig'
@@ -167,7 +167,10 @@ return { -- LSP Configuration & Plugins
     local servers = {
       -- clangd = {},
       -- gopls = {},
-      -- pyright = {},
+      pyright = {},
+      mypy = {},
+      ruff = {},
+      ruby_lsp = {},
       -- rust_analyzer = {},
       -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
       --
@@ -192,6 +195,7 @@ return { -- LSP Configuration & Plugins
           },
         },
       },
+      marksman = {},
     }
     -- Ensure the servers and tools above are installed
     --  To check the current status of installed tools and/or manually install
