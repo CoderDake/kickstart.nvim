@@ -93,6 +93,9 @@ vim.g.maplocalleader = ' '
 require 'custom/mappings'
 require 'custom/jobber'
 
+-- package.path = package.path .. ';/opt/homebrew/lib/lua/5.4/luasql/?.lua'
+-- package.cpath = package.cpath .. ';/opt/homebrew/lib/lua/5.4/luasql/?.so'
+
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = false
 
@@ -195,7 +198,7 @@ vim.keymap.set('', '<f1>', toggle_profile)
 -- Set highlight on search, but clear on pressing <Esc> in normal mode
 vim.opt.hlsearch = true
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
-vim.keymap.set('i', 'jj', '<Esc>', { desc = 'Use jj to escape insert mode' })
+-- vim.keymap.set('i', 'jj', '<Esc>', { desc = 'Use jj to escape insert mode' })
 
 -- Diagnostic keymaps
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous [D]iagnostic message' })
@@ -451,6 +454,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sf', function()
         builtin.find_files { hidden = true }
       end, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>sb', builtin.buffers, { desc = '[S]earch [B]uffers' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', function()
@@ -495,53 +499,41 @@ require('lazy').setup({
     lazy = false,
     keys = {
       {
-        '<leader>f',
+        '<leader>ff',
         function()
           require('conform').format { async = true, lsp_fallback = true }
         end,
         mode = '',
         desc = '[F]ormat buffer',
       },
+      {
+        '<leader>fe',
+        '<cmd>FormatEnable<CR>',
+        mode = '',
+        desc = '[F]ormat [E]nable',
+      },
+      {
+        '<leader>fd',
+        '<cmd>FormatDisable<CR>',
+        mode = '',
+        desc = '[F]ormat [D]isable',
+      },
     },
     opts = {
       notify_on_error = false,
       format_on_save = function(bufnr)
-        local function has_value(tab, val)
-          for index, value in ipairs(tab) do
-            if value == val then
-              return true
-            end
-          end
-
-          return false
+        -- Disable with a global or buffer-local variable
+        if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then
+          print 'DISABLED'
+          return
         end
-        -- Disable "format_on_save lsp_fallback" for languages that don't
-        -- have a well standardized coding style. You can add additional
-        -- languages here or re-enable it for the disabled ones.
-        print('DAKE FOS')
-        local disable_filetypes = { c = true, cpp = true } -- TODO add rb & others so we can do their formatting after save
-        local types_for_only_format_diff = { 'rb' }
-        local filePath = vim.fn.expand("#" .. bufnr .. ":p")
-        print('Dake filepath' .. filePath)
-        local fileExtension = filePath:match("^.+%.(.+)$")
-        -- local range = nil
-        print('Dake File extension: ' .. fileExtension)
-        -- TODO this will need to be changed over so that we can do multiple individual formats
-        if has_value(types_for_only_format_diff, fileExtension) then
-          print('Dake about to get range')
-          range = currentFileDiffRanges()
-        end
-
-        print('FOSRANGE: ' .. dump(range));
-        return {
-          range = range,
-          timeout_ms = 500,
-          lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
-        }
+        return { timeout_ms = 500, lsp_format = 'fallback' }
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
         json = { 'jq' },
+        ts = {},
+        tsx = {},
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -551,13 +543,63 @@ require('lazy').setup({
       },
     },
     config = function(_, opts)
-      local conform = require('conform')
-      vim.api.nvim_create_autocmd("BufWritePost", {
-        pattern = "*",
-        callback = function(args)
-          require("conform").format({ bufnr = args.buf })
-        end,
+      local conform = require 'conform'
+      vim.api.nvim_create_user_command('FormatDisable', function(args)
+        if args.bang then
+          -- FormatDisable! will disable formatting just for this buffer
+          vim.b.disable_autoformat = true
+        else
+          vim.g.disable_autoformat = true
+        end
+      end, {
+        desc = 'Disable autoformat-on-save',
+        bang = true,
       })
+      vim.api.nvim_create_user_command('FormatEnable', function()
+        vim.b.disable_autoformat = false
+        vim.g.disable_autoformat = false
+      end, {
+        desc = 'Re-enable autoformat-on-save',
+      })
+
+      -- vim.api.nvim_create_autocmd('BufWritePost', {
+      --   pattern = '*.rb', -- TODO create a list of these that we can set
+      --   callback = function(args)
+      --     local bufnr = args.buf
+      --     -- local function has_value(tab, val)
+      --     --   for index, value in ipairs(tab) do
+      --     --     if value == val then
+      --     --       return true
+      --     --     end
+      --     --   end
+      --     --
+      --     --   return false
+      --     -- end
+      --     -- -- Disable "format_on_save lsp_fallback" for languages that don't
+      --     -- -- have a well standardized coding style. You can add additional
+      --     -- -- languages here or re-enable it for the disabled ones.
+      --     -- print('DAKE FOS')
+      --     -- local disable_filetypes = { c = true, cpp = true } -- TODO add rb & others so we can do their formatting after save
+      --     -- local types_for_only_format_diff = { 'rb' }
+      --     -- local filePath = vim.fn.expand("#" .. bufnr .. ":p")
+      --     -- print('Dake filepath' .. filePath)
+      --     -- local fileExtension = filePath:match("^.+%.(.+)$")
+      --     -- -- local range = nil
+      --     -- print('Dake File extension: ' .. fileExtension)
+      --     -- -- TODO this will need to be changed over so that we can do multiple individual formats
+      --     -- if has_value(types_for_only_format_diff, fileExtension) then
+      --     --   print('Dake about to get range')
+      --     --   ranges = currentFileDiffRanges()
+      --     --   print('Ranges: ' .. dump(ranges))
+      --     --   for i = #ranges, 1, -1 do
+      --     --     local range = ranges[i]
+      --     --     print( 'Range: '.. dump( range  ))
+      --     --   end
+      --     --
+      --     -- end
+      --     -- vim.api.nvim_cmd(vim.cmd.DiffFormat,{ args = {bufnr }})
+      --   end,
+      -- })
       vim.keymap.set('v', '<leader>Fj', function()
         -- This is supposed to format the selection using a json formatter but doesn't work
         local range = { vim.fn.getpos "'<", vim.fn.getpos "'>" }

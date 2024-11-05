@@ -154,6 +154,7 @@ return { -- LSP Configuration & Plugins
     --  So, we create new capabilities with nvim cmp, and then broadcast that to the servers.
     local capabilities = vim.lsp.protocol.make_client_capabilities()
     capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
+    local nvim_lsp = require 'lspconfig'
 
     -- Enable the following language servers
     --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
@@ -164,13 +165,46 @@ return { -- LSP Configuration & Plugins
     --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
     --  - settings (table): Override the default settings passed when initializing the server.
     --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
+    -- vim.lsp.set_log_level 'debug' --Debug logging
     local servers = {
       -- clangd = {},
       -- gopls = {},
       pyright = {},
       mypy = {},
       ruff = {},
-      ruby_lsp = {},
+      -- ruby_lsp = {},
+      bashls = {},
+      ruby_lsp = {
+        -- cmd = { "bundle", "exec", "ruby-lsp" },
+        -- init_options = {
+        --   formatter = "auto",
+        -- },
+      },
+      rubocop = {
+        -- See: https://docs.rubocop.org/rubocop/usage/lsp.html
+        cmd = { 'bundle', 'exec', 'rubocop', '--lsp' },
+        root_dir = nvim_lsp.util.root_pattern('Gemfile', '.git', '.'),
+      },
+      -- solargraph = {
+      --   -- cmd = { 'asofjsodij', 'stdio' },
+      --   filetypes = { 'ruby' },
+      --   init_options = {
+      --     formatting = true,
+      --   },
+      --   root_dir = nvim_lsp.util.root_pattern('Gemfile', '.git'),
+      --   settings = {
+      --     solargraph = {
+      --       diagnostics = true,
+      --       -- autoformat = true, -- currently done with conform
+      --       -- completion = true,
+      --       -- diagnostic = true,
+      --       -- folding = true,
+      --       -- references = true,
+      --       -- rename = true,
+      --       -- symbols = true,
+      --     },
+      --   },
+      -- },
       -- rust_analyzer = {},
       -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
       --

@@ -17,6 +17,25 @@ vim.keymap.set('n', '<leader>be', function()
   local escaped = vim.fn.escape(value, '/\\')
   vim.fn.setreg('+', escaped)
 end, { desc = '[E]scape the copy [B]uffer' })
+vim.keymap.set('n', '<leader>tn', '<cmd>tabn<CR>', { desc = '[T]ab [N]ext' })
+vim.keymap.set('n', '<leader>tp', '<cmd>tabp<CR>', { desc = '[T]ab [P]revious' })
+vim.keymap.set('n', '<leader>tc', '<cmd>tabc<CR>', { desc = '[T]ab [C]lose' })
+vim.keymap.set('n', '<leader>to', '<cmd>tabonly<CR>', { desc = '[T]ab [O]nly' })
+vim.keymap.set('n', '<leader>tN', '<cmd>tabnew<CR>', { desc = '[T]ab [N]ew' })
+
+P = function(v)
+  print(vim.inspect(v))
+  return v
+end
+
+RELOAD = function(...)
+  return require('plenary.relaod').reload_module(...)
+end
+
+R = function(name)
+  RELOAD(name)
+  return require(name)
+end
 -- vim.keymap.set('v', '<leader>Fj', function()
 --   local vstart = vim.fn.getpos "'<"
 --
